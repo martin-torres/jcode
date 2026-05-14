@@ -540,7 +540,7 @@ pub(super) fn handle_text_input(app: &mut App, text: &str) -> bool {
                     app.remember_input_undo_state();
                     app.input = prompt.clone();
                     app.cursor_pos = app.input.len();
-                    app.follow_chat_bottom_for_typing();
+                    app.follow_chat_top_for_typing();
                     return true;
                 }
             }
@@ -1381,7 +1381,7 @@ pub(super) fn handle_basic_key(app: &mut App, code: KeyCode) -> bool {
                     app.set_status_notice("Interrupting...");
                 }
             } else {
-                app.follow_chat_bottom();
+                app.follow_chat_top();
                 clear_input_for_escape(app);
             }
             true
@@ -1838,7 +1838,7 @@ impl App {
         self.pasted_contents.clear();
         self.cursor_pos = 0;
         self.clear_input_undo_history();
-        self.follow_chat_bottom(); // Reset to bottom and resume auto-scroll on new input
+        self.follow_chat_top(); // Reset to bottom and resume auto-scroll on new input
 
         // If the previous assistant turn still has visible streamed text that has not yet been
         // committed into chat history, finalize it before inserting the next user turn.

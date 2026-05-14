@@ -1058,10 +1058,12 @@ impl App {
             self.scroll_max_estimate()
         };
         if !self.auto_scroll_paused {
-            let current_abs = max.saturating_sub(self.scroll_offset);
-            self.scroll_offset = current_abs.saturating_sub(amount);
+            // Auto-scroll is active (at scroll_offset=0, showing newest at top).
+            // Scrolling up reveals older content (higher line indices).
+            self.scroll_offset = amount.min(max);
         } else {
-            self.scroll_offset = self.scroll_offset.saturating_sub(amount);
+            // Already paused: move further toward older content.
+            self.scroll_offset = (self.scroll_offset + amount).min(max);
         }
         self.auto_scroll_paused = true;
         self.maybe_queue_compacted_history_load();
@@ -1071,15 +1073,8 @@ impl App {
         if self.auto_scroll_paused {
             return;
         }
-
-        let max_scroll = super::super::ui::last_max_scroll();
-        let max = if max_scroll > 0 {
-            max_scroll
-        } else {
-            self.scroll_max_estimate()
-        };
-
-        self.scroll_offset = max.saturating_sub(self.scroll_offset.min(max));
+        // In the top-down layout, scroll_offset is already distance from top (0 = newest).
+        // No coordinate transformation needed — just pause in place.
         self.auto_scroll_paused = true;
     }
 
@@ -1088,18 +1083,19 @@ impl App {
             return;
         }
         let max_scroll = super::super::ui::last_max_scroll();
-        let max = if max_scroll > 0 {
+        let _max = if max_scroll > 0 {
             max_scroll
         } else {
             self.scroll_max_estimate()
         };
-        self.scroll_offset = (self.scroll_offset + amount).min(max);
-        if self.scroll_offset >= max {
-            self.follow_chat_bottom();
+        // Scroll down toward newer content (lower line indices, toward 0).
+        self.scroll_offset = self.scroll_offset.saturating_sub(amount);
+        if self.scroll_offset == 0 {
+            self.follow_chat_top(); // Resume auto-scroll at newest content
         }
     }
 
-    pub(super) fn follow_chat_bottom(&mut self) {
+    pub(super) fn follow_chat_top(&mut self) {
         self.scroll_offset = 0;
         self.auto_scroll_paused = false;
     }
@@ -1118,6 +1114,6 @@ impl App {
     }
 
     pub(super) fn debug_scroll_bottom(&mut self) {
-        self.follow_chat_bottom();
+        self.follow_chat_top();
     }
 }

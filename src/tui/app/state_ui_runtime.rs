@@ -280,7 +280,7 @@ impl App {
         self.mcp_server_names.clone()
     }
 
-    /// Scroll to the previous user prompt (scroll up - earlier in conversation)
+    /// Scroll to the previous user prompt (Ctrl+[ — older in conversation, higher line index in top-down layout)
     pub fn scroll_to_prev_prompt(&mut self) {
         let positions = ui::last_user_prompt_positions();
         if positions.is_empty() {
@@ -289,18 +289,39 @@ impl App {
 
         let current = self.scroll_offset;
 
-        // positions are in document order (top to bottom).
-        // Find the last position that is strictly less than current (i.e. earlier/above).
-        // If we're at the bottom (!auto_scroll_paused), treat current as past-the-end.
+        // In top-down layout: newer = low indices (near 0), older = high indices.
+        // "Previous prompt" = older = higher line index.
+        // If we're at the newest (!auto_scroll_paused), treat current as 0.
         if !self.auto_scroll_paused {
-            // Jump to the most recent (last) prompt
-            if let Some(&pos) = positions.last() {
+            // Jump to the most recent (first) prompt — positions[0] is newest.
+            if let Some(&pos) = positions.first() {
                 self.scroll_offset = pos;
                 self.auto_scroll_paused = true;
             }
             return;
         }
 
+        // Find the first position strictly greater than current (older = higher index).
+        for &pos in &positions {
+            if pos > current {
+                self.scroll_offset = pos;
+                return;
+            }
+        }
+        // If no older prompt, stay where we are
+    }
+
+    /// Scroll to the next user prompt (Ctrl+] — newer in conversation, lower line index in top-down layout)
+    pub fn scroll_to_next_prompt(&mut self) {
+        let positions = ui::last_user_prompt_positions();
+        if positions.is_empty() || !self.auto_scroll_paused {
+            return;
+        }
+
+        let current = self.scroll_offset;
+
+        // In top-down layout: newer = lower line indices (closer to input at 0).
+        // Find the last position strictly less than current (closest newer prompt below).
         let mut target = None;
         for &pos in positions.iter().rev() {
             if pos < current {
@@ -311,34 +332,17 @@ impl App {
 
         if let Some(pos) = target {
             self.scroll_offset = pos;
-        }
-        // If no prompt above, stay where we are
-    }
-
-    /// Scroll to the next user prompt (scroll down - later in conversation)
-    pub fn scroll_to_next_prompt(&mut self) {
-        let positions = ui::last_user_prompt_positions();
-        if positions.is_empty() || !self.auto_scroll_paused {
             return;
         }
 
-        let current = self.scroll_offset;
-
-        // Find the first position strictly greater than current (i.e. later/below).
-        for &pos in &positions {
-            if pos > current {
-                self.scroll_offset = pos;
-                return;
-            }
-        }
-
-        // No more prompts below - go to bottom
-        self.follow_chat_bottom();
+        // No newer prompts — go to newest content (top)
+        self.follow_chat_top();
     }
 
     /// Scroll to Nth most-recent user prompt (1 = most recent, 2 = second most recent, etc.).
     /// Uses actual wrapped line positions from the last render frame for accurate placement,
     /// positioning the prompt at the top of the viewport.
+    /// In top-down layout: most recent = lowest line index (closest to input at top).
     pub(super) fn scroll_to_recent_prompt_rank(&mut self, rank: usize) {
         let rank = rank.max(1);
         let positions = ui::last_user_prompt_positions();
@@ -348,8 +352,9 @@ impl App {
             return;
         }
 
-        // positions are in document order (top to bottom), we want most-recent first
-        let target_idx = positions.len().saturating_sub(rank);
+        // In top-down layout, positions are in document order (newest first at line 0).
+        // rank 1 = most recent = positions[0], rank 2 = positions[1], etc.
+        let target_idx = (rank - 1).min(positions.len() - 1);
         let target_line = positions[target_idx];
         self.set_status_notice(format!(
             "Ctrl+{}: idx={}/{} line={} max={}",

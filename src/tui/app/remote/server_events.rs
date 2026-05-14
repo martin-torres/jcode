@@ -615,7 +615,7 @@ pub(in crate::tui::app) fn handle_server_event(
                 app.remote_resume_activity = None;
                 app.is_processing = false;
                 app.status = ProcessingStatus::Idle;
-                app.follow_chat_bottom();
+                app.follow_chat_top();
                 if prev_session_id.is_some() {
                     app.queued_messages.clear();
                     app.interleave_message = None;

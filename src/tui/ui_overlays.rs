@@ -449,13 +449,13 @@ pub(super) fn draw_debug_overlay(
     if chunks.len() < 5 {
         return;
     }
-    render_overlay_box(frame, chunks[0], "messages", Color::Red);
-    render_overlay_box(frame, chunks[1], "queued", Color::Yellow);
-    render_overlay_box(frame, chunks[2], "status", Color::Cyan);
-    render_overlay_box(frame, chunks[3], "picker", Color::Magenta);
-    render_overlay_box(frame, chunks[4], "input", Color::Green);
+    render_overlay_box(frame, chunks[0], "input", Color::Green);
+    render_overlay_box(frame, chunks[1], "status", Color::Cyan);
+    render_overlay_box(frame, chunks[2], "notify", Color::Magenta);
+    render_overlay_box(frame, chunks[3], "queued", Color::Yellow);
+    render_overlay_box(frame, chunks[4], "inline", Color::Blue);
     if chunks.len() > 5 && chunks[5].height > 0 {
-        render_overlay_box(frame, chunks[5], "donut", Color::Blue);
+        render_overlay_box(frame, chunks[5], "gap", Color::Gray);
     }
 
     for placement in placements {

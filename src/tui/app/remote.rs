@@ -1152,7 +1152,7 @@ fn handle_disconnected_key_internal(
 
     if let Some(text) = text_input.or_else(|| input::text_input_for_key(code, modifiers)) {
         input::handle_text_input(app, &text);
-        app.follow_chat_bottom_for_typing();
+        app.follow_chat_top_for_typing();
         return Ok(());
     }
 
@@ -1204,7 +1204,7 @@ fn handle_disconnected_key_internal(
             app.scroll_down(dec);
         }
         KeyCode::Esc => {
-            app.follow_chat_bottom();
+            app.follow_chat_top();
             input::clear_input_for_escape(app);
         }
         _ => {}

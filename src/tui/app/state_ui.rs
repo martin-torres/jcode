@@ -472,15 +472,15 @@ impl App {
         } else if self.auto_scroll_paused && self.scroll_offset > 0 {
             // We're scrolled up — save position and jump to bottom
             self.scroll_bookmark = Some(self.scroll_offset);
-            self.follow_chat_bottom();
+            self.follow_chat_top();
             self.set_status_notice("📌 Bookmark set — press again to return");
         }
         // If already at bottom with no bookmark, do nothing
     }
 
-    pub(super) fn follow_chat_bottom_for_typing(&mut self) {
+    pub(super) fn follow_chat_top_for_typing(&mut self) {
         if !self.typing_scroll_lock {
-            self.follow_chat_bottom();
+            self.follow_chat_top();
         }
     }
 

@@ -5,7 +5,7 @@ use crate::tui::core;
 
 pub(in crate::tui::app) fn handle_remote_char_input(app: &mut App, c: char) {
     input::handle_text_input(app, &c.to_string());
-    app.follow_chat_bottom_for_typing();
+    app.follow_chat_top_for_typing();
 }
 
 pub(in crate::tui::app) async fn send_interleave_now(
@@ -618,7 +618,7 @@ async fn handle_remote_key_internal(
 
     if code == KeyCode::Enter && modifiers.intersects(KeyModifiers::SHIFT | KeyModifiers::ALT) {
         input::insert_input_text(app, "\n");
-        app.follow_chat_bottom_for_typing();
+        app.follow_chat_top_for_typing();
         return Ok(());
     }
 
@@ -629,7 +629,7 @@ async fn handle_remote_key_internal(
 
     if let Some(text) = text_input.or_else(|| input::text_input_for_key(code, modifiers)) {
         input::handle_text_input(app, &text);
-        app.follow_chat_bottom_for_typing();
+        app.follow_chat_top_for_typing();
         return Ok(());
     }
 
@@ -2228,7 +2228,7 @@ async fn handle_remote_key_internal(
                     app.set_status_notice("Interrupting...");
                 }
             } else {
-                app.follow_chat_bottom();
+                app.follow_chat_top();
                 input::clear_input_for_escape(app);
             }
         }

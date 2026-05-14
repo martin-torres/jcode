@@ -1905,24 +1905,24 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
         .direction(Direction::Vertical)
         .constraints(if use_packed {
             vec![
-                Constraint::Length(content_height.max(1)), // Messages (exact height)
-                Constraint::Length(queued_height),         // Queued messages (above status)
+                Constraint::Length(input_height),          // Input (now at top)
                 Constraint::Length(1),                     // Status line
                 Constraint::Length(notification_height),   // Notification line
+                Constraint::Length(queued_height),         // Queued messages
                 Constraint::Length(inline_block_height),   // Inline UI
                 Constraint::Length(inline_ui_gap_height),  // Inline UI/input spacing
-                Constraint::Length(input_height),          // Input
+                Constraint::Length(content_height.max(1)), // Messages (exact height)
                 Constraint::Length(donut_height),          // Donut animation
             ]
         } else {
             vec![
-                Constraint::Min(3),                       // Messages (scrollable)
-                Constraint::Length(queued_height),        // Queued messages (above status)
+                Constraint::Length(input_height),         // Input (now at top)
                 Constraint::Length(1),                    // Status line
                 Constraint::Length(notification_height),  // Notification line
+                Constraint::Length(queued_height),        // Queued messages
                 Constraint::Length(inline_block_height),  // Inline UI
                 Constraint::Length(inline_ui_gap_height), // Inline UI/input spacing
-                Constraint::Length(input_height),         // Input
+                Constraint::Min(3),                       // Messages (scrollable)
                 Constraint::Length(donut_height),         // Donut animation
             ]
         })
@@ -1932,12 +1932,12 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
     if let Some(ref mut capture) = debug_capture {
         capture.layout.use_packed = use_packed;
         capture.layout.estimated_content_height = content_height as usize;
-        capture.layout.messages_area = Some(chunks[0].into());
+        capture.layout.messages_area = Some(chunks[6].into());
         if queued_height > 0 {
-            capture.layout.queued_area = Some(chunks[1].into());
+            capture.layout.queued_area = Some(chunks[3].into());
         }
-        capture.layout.status_area = Some(chunks[2].into());
-        capture.layout.input_area = Some(chunks[6].into());
+        capture.layout.status_area = Some(chunks[1].into());
+        capture.layout.input_area = Some(chunks[0].into());
         capture.layout.input_lines_raw = app.input().lines().count().max(1);
         capture.layout.input_lines_wrapped = base_input_height as usize;
 
@@ -1995,8 +1995,8 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
     }
     let draw_start = Instant::now();
 
-    // Messages area is chunks[0] within the chat column (already excludes diagram).
-    let messages_area = chunks[0];
+    // Messages area is chunks[6] within the chat column (now below input/status/queued).
+    let messages_area = chunks[6];
     note_chat_layout(ChatLayoutMetrics {
         chat_area,
         messages_area,
@@ -2013,7 +2013,7 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
         capture.layout.messages_area = Some(messages_area.into());
         capture.layout.diagram_area = diagram_area.map(|r| r.into());
     }
-    record_layout_snapshot(messages_area, diagram_area, diff_pane_area, Some(chunks[6]));
+    record_layout_snapshot(messages_area, diagram_area, diff_pane_area, Some(chunks[0]));
 
     let margins = draw_messages(
         frame,
@@ -2101,14 +2101,14 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
         if let Some(ref mut capture) = debug_capture {
             capture.render_order.push("draw_queued".to_string());
         }
-        input_ui::draw_queued(frame, app, chunks[1], user_count + 1);
+        input_ui::draw_queued(frame, app, chunks[3], user_count + 1);
     }
     if let Some(ref mut capture) = debug_capture {
         capture.render_order.push("draw_status".to_string());
     }
-    input_ui::draw_status(frame, app, chunks[2], pending_count);
+    input_ui::draw_status(frame, app, chunks[1], pending_count);
     if notification_height > 0 {
-        input_ui::draw_notification(frame, app, chunks[3]);
+        input_ui::draw_notification(frame, app, chunks[2]);
     }
     if let Some(ref mut capture) = debug_capture {
         capture.render_order.push("draw_input".to_string());
@@ -2121,7 +2121,7 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
     input_ui::draw_input(
         frame,
         app,
-        chunks[6],
+        chunks[0],
         user_count + pending_count + 1,
         &mut debug_capture,
     );

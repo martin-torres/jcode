@@ -348,7 +348,7 @@ pub(in crate::tui::app) fn apply_transcript_event(
         }
     }
 
-    app.follow_chat_bottom_for_typing();
+    app.follow_chat_top_for_typing();
 }
 
 pub(in crate::tui::app) async fn apply_remote_transcript_event(
@@ -371,6 +371,6 @@ pub(in crate::tui::app) async fn apply_remote_transcript_event(
         _ => apply_transcript_event(app, text, mode),
     }
 
-    app.follow_chat_bottom_for_typing();
+    app.follow_chat_top_for_typing();
     Ok(())
 }

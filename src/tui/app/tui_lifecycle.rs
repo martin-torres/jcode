@@ -991,7 +991,7 @@ impl App {
         if let Some(model) = self.session.model.clone() {
             self.update_context_limit_for_model(&model);
         }
-        self.follow_chat_bottom();
+        self.follow_chat_top();
         crate::logging::info(&format!(
             "Remote startup fast restore: session={}, display_messages={}, images={}, load={}ms, render={}ms, images_render={}ms, total={}ms",
             session_id,

@@ -148,7 +148,7 @@ impl App {
         self.diff_pane_scroll_x = 0;
         self.diff_pane_focus = false;
         self.diff_pane_auto_scroll = false;
-        self.follow_chat_bottom();
+        self.follow_chat_top();
         self.is_processing = false;
         self.clear_streaming_render_state();
         self.queued_messages.clear();
@@ -388,7 +388,7 @@ impl App {
         self.diff_pane_scroll_x = 0;
         self.diff_pane_focus = false;
         self.diff_pane_auto_scroll = false;
-        self.follow_chat_bottom();
+        self.follow_chat_top();
         self.is_processing = false;
         self.clear_streaming_render_state();
         self.queued_messages.clear();
@@ -802,7 +802,7 @@ impl App {
             },
         ];
         self.bump_display_messages_version();
-        self.follow_chat_bottom();
+        self.follow_chat_top();
         self.is_processing = false;
         self.clear_streaming_render_state();
         self.queued_messages.clear();
@@ -833,7 +833,7 @@ impl App {
         };
 
         // Baseline render (bottom) for metrics
-        self.follow_chat_bottom();
+        self.follow_chat_top();
         if let Err(e) = terminal.draw(|f| crate::tui::ui::draw(f, self)) {
             errors.push(format!("baseline draw error: {}", e));
         }
