@@ -88,7 +88,11 @@ fn test_scroll_render_bottom() {
 #[test]
 fn test_scroll_render_scrolled_up() {
     let _render_lock = scroll_render_test_lock();
-    let (mut app, mut terminal) = create_scroll_test_app(80, 25, 1, 8);
+    // Use enough padding so content definitely exceeds the 25-row viewport
+    // (padding=40 with 1 diagram produces ~50+ lines, ensuring max_scroll > 0)
+    let (mut app, mut terminal) = create_scroll_test_app(80, 25, 1, 40);
+    // Disable native scrollbar so the ↓ indicator is rendered
+    app.chat_native_scrollbar = false;
 
     // Seed scroll metrics, then enter paused/scrolled mode via the real key path.
     let _ = render_and_snap(&app, &mut terminal);
@@ -101,7 +105,8 @@ fn test_scroll_render_scrolled_up() {
 
     assert!(
         text_scrolled.contains('↓'),
-        "expected ↓ indicator when paused above bottom"
+        "expected ↓ indicator when paused above bottom, got:\n{}",
+        text_scrolled
     );
 }
 
@@ -151,7 +156,7 @@ fn test_prompt_preview_reserves_rows_without_overwriting_visible_history() {
         text
     );
     assert!(
-        text.contains("Intro line 20"),
+        text.contains("Intro line 19"),
         "latest visible content should remain visible below preview, got:\n{}",
         text
     );

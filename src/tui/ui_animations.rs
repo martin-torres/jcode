@@ -602,9 +602,18 @@ fn shape_char_3x3(pattern: u16, brightness: f32) -> char {
         0u8
     };
 
+    if count >= 9 {
+        // Full 9/9 coverage: solid block avoids the transparent-center ring
+        // artifact that characters like @ produce against a dark background.
+        return match bl {
+            2 => '█',
+            1 => '▓',
+            _ => '▒',
+        };
+    }
     if count >= 8 {
         return match bl {
-            2 => '@',
+            2 => '▓',
             1 => '#',
             _ => '%',
         };
