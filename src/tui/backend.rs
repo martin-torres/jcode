@@ -825,12 +825,10 @@ impl RemoteConnection {
                         Ok(event) => return RemoteRead::Event(event),
                         Err(error) => {
                             crate::logging::warn(&format!(
-                                "RemoteConnection::next_event: protocol error={} line={:?} (session_id={:?}, client_instance_id={:?})",
-                                error, self.line_buffer, self.session_id, self.client_instance_id
+                                "RemoteConnection::next_event: skipping unparseable line (protocol error={}) (session_id={:?}, client_instance_id={:?})",
+                                error, self.session_id, self.client_instance_id
                             ));
-                            return RemoteRead::Disconnected(RemoteDisconnectReason::Protocol(
-                                error.to_string(),
-                            ));
+                            continue;
                         }
                     }
                 }

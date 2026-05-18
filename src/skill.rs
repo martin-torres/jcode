@@ -242,6 +242,14 @@ impl SkillRegistry {
             self.load_from_dir(&local_claude)?;
         }
 
+        // Load from ./.hermes/cmds/ (Specify/Speckit command definitions)
+        if let Some(dir) = working_dir {
+            let hermes_cmds = dir.join(".hermes").join("cmds");
+            if hermes_cmds.exists() {
+                self.load_from_hermes_cmds_dir(&hermes_cmds)?;
+            }
+        }
+
         Ok(())
     }
 
@@ -266,6 +274,52 @@ impl SkillRegistry {
         }
 
         Ok(())
+    }
+
+    /// Load skills from a flat `.md` files directory (Specify/Speckit .hermes/cmds/ format).
+    /// Each `.md` file with YAML frontmatter becomes a skill named after its stem.
+    fn load_from_hermes_cmds_dir(&mut self, dir: &Path) -> Result<()> {
+        if !dir.is_dir() {
+            return Ok(());
+        }
+
+        for entry in std::fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
+                if let Ok(skill) = Self::parse_hermes_cmd(&path) {
+                    self.skills.insert(skill.name.clone(), skill);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Parse a flat `.md` command file (Hermes/Speckit format) into a Skill.
+    /// The skill name is derived from the file stem (e.g. `speckit.plan` from `speckit.plan.md`).
+    fn parse_hermes_cmd(path: &Path) -> Result<Skill> {
+        let content = std::fs::read_to_string(path)?;
+
+        let stem = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .ok_or_else(|| anyhow::anyhow!("Invalid filename: {:?}", path))?
+            .to_string();
+
+        let (frontmatter, body) = Self::parse_frontmatter(&content)?;
+        let description = frontmatter.description;
+        let search_text = build_skill_search_text(&stem, &description, &body);
+
+        Ok(Skill {
+            name: stem,
+            description,
+            allowed_tools: None,
+            content: body,
+            path: path.to_path_buf(),
+            search_text,
+        })
     }
 
     /// Parse a SKILL.md file
@@ -333,7 +387,12 @@ impl SkillRegistry {
 
         if let Some(path) = path {
             if path.exists() {
-                let skill = Self::parse_skill(&path)?;
+                // Detect format from path: SKILL.md → parse_skill, otherwise hermes cmd
+                let skill = if path.file_name().is_some_and(|n| n == "SKILL.md") {
+                    Self::parse_skill(&path)?
+                } else {
+                    Self::parse_hermes_cmd(&path)?
+                };
                 self.skills.insert(skill.name.clone(), skill);
                 Ok(true)
             } else {
@@ -378,6 +437,14 @@ impl SkillRegistry {
             count += self.load_from_dir_count(&local_claude)?;
         }
 
+        // Load from ./.hermes/cmds/ (Specify/Speckit command definitions)
+        if let Some(dir) = working_dir {
+            let hermes_cmds = dir.join(".hermes").join("cmds");
+            if hermes_cmds.exists() {
+                count += self.load_from_hermes_cmds_dir_count(&hermes_cmds)?;
+            }
+        }
+
         Ok(count)
     }
 
@@ -397,6 +464,28 @@ impl SkillRegistry {
                 if skill_file.exists()
                     && let Ok(skill) = Self::parse_skill(&skill_file)
                 {
+                    self.skills.insert(skill.name.clone(), skill);
+                    count += 1;
+                }
+            }
+        }
+
+        Ok(count)
+    }
+
+    /// Load skills from a flat `.md` directory and return count (hermes cmds format)
+    fn load_from_hermes_cmds_dir_count(&mut self, dir: &Path) -> Result<usize> {
+        if !dir.is_dir() {
+            return Ok(0);
+        }
+
+        let mut count = 0;
+        for entry in std::fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
+                if let Ok(skill) = Self::parse_hermes_cmd(&path) {
                     self.skills.insert(skill.name.clone(), skill);
                     count += 1;
                 }

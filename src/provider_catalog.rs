@@ -189,20 +189,63 @@ pub fn openai_compatible_profile_static_models(profile: OpenAiCompatibleProfile)
 
     match profile.id {
         "opencode" => {
-            push("minimax-m2.7");
-            push("kimi-k2.5");
-            push("glm-4.7");
-            push("glm-5");
+            push("claude-opus-4-7");
+            push("claude-opus-4-6");
+            push("claude-opus-4-5");
+            push("claude-opus-4-1");
+            push("claude-sonnet-4-6");
+            push("claude-sonnet-4-5");
+            push("claude-sonnet-4");
             push("claude-haiku-4-5");
+            push("gemini-3.1-pro");
+            push("gemini-3-flash");
+            push("gpt-5.5");
+            push("gpt-5.5-pro");
+            push("gpt-5.4");
+            push("gpt-5.4-pro");
+            push("gpt-5.4-mini");
+            push("gpt-5.4-nano");
+            push("gpt-5.3-codex-spark");
+            push("gpt-5.3-codex");
+            push("gpt-5.2");
+            push("gpt-5.2-codex");
+            push("gpt-5.1");
             push("gpt-5.1-codex-max");
+            push("gpt-5.1-codex");
+            push("gpt-5.1-codex-mini");
+            push("gpt-5");
+            push("gpt-5-codex");
+            push("gpt-5-nano");
+            push("glm-5.1");
+            push("glm-5");
+            push("minimax-m2.7");
+            push("minimax-m2.5");
+            push("minimax-m2.5-free");
+            push("kimi-k2.6");
+            push("kimi-k2.5");
+            push("qwen3.6-plus");
+            push("qwen3.6-plus-free");
+            push("qwen3.5-plus");
+            push("big-pickle");
+            push("deepseek-v4-flash-free");
+            push("nemotron-3-super-free");
         }
         "opencode-go" => {
             push("minimax-m2.7");
+            push("minimax-m2.5");
+            push("kimi-k2.6");
             push("kimi-k2.5");
-            push("glm-5");
             push("glm-5.1");
+            push("glm-5");
+            push("deepseek-v4-pro");
             push("deepseek-v4-flash");
+            push("qwen3.6-plus");
             push("qwen3.5-plus");
+            push("mimo-v2-pro");
+            push("mimo-v2-omni");
+            push("mimo-v2.5-pro");
+            push("mimo-v2.5");
+            push("hy3-preview");
         }
         "zai" => {
             push("glm-4.5");

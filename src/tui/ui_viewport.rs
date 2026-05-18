@@ -246,7 +246,7 @@ pub(super) fn draw_messages(
     let scroll = if app.auto_scroll_paused() {
         user_scroll.min(max_scroll)
     } else {
-        max_scroll
+        0 // auto-follow = newest content at top (section order is now newest-first)
     };
 
     let prompt_preview_lines = if crate::config::config().display.prompt_preview && scroll > 0 {

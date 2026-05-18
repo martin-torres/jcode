@@ -1,0 +1,92 @@
+# TUI Chat Scroll Behavior
+
+## Purpose (after top-down layout flip)
+
+In the terminal TUI (Ghostty, iTerm2, etc.), the **input box is at the top** and the **newest content appears right below it**. As new output streams in, it enters below the input, at the top of the message area. Older content scrolls down. The user sees the live conversation unfold without ever having to scroll. If they scroll down to read older history, auto-scroll pauses and doesn't fight them. Scrolling back up resumes tracking.
+
+## Layout
+
+```
+┌──────────────────────────────┐
+│  [input box]                 │  ← fixed at top
+├──────────────────────────────┤
+│  ← streaming in... ▊         │  ← newest content enters here
+│                              │
+│  newer message               │
+│                              │
+│  older message               │
+│                              │
+│  oldest message / history    │
+└──────────────────────────────┘
+```
+
+## Key Concepts
+
+| Term | Meaning |
+|---|---|
+| `scroll_offset = 0` | Auto-scroll active, showing newest content at top of viewport |
+| `scroll_offset > 0` | User scrolled down to read older content |
+| `auto_scroll_paused = false` | Following latest content |
+| `auto_scroll_paused = true` | User scrolled away, paused |
+| `follow_chat_top()` | Resume auto-scroll to newest |
+| `max_scroll` | Index of oldest content (total_lines - visible_height) |
+
+`scroll_offset` is the **first visible line index** — line 0 is the newest (Streaming section), and higher indices are older. When `auto_scroll_paused = false`, the renderer uses `scroll_offset = 0` directly.
+
+## Behaviors
+
+### Normal flow (reading the latest)
+- New content streams in **right below the input box**
+- `scroll_offset = 0`, newest content is at the top of the viewport
+- User sees everything without needing to scroll
+
+### User scrolls down to read history
+- `scroll_down(amount)` → decreases `scroll_offset` toward 0... Wait — no!
+- Actually: `scroll_up(amount)` INCREASES offset (more lines from top = older content)
+- `scroll_down(amount)` DECREASES offset toward 0 (newer content)
+- When `auto_scroll_paused` is true (user scrolled), new content still arrives but does **not** force the viewport back
+- Scroll indicator `↑N` shows how many newer lines are above the viewport
+
+### User scrolls back up
+- `scroll_down(amount)` → moves `scroll_offset` toward 0
+- When `scroll_offset == 0` → `follow_chat_top()` resumes auto-scroll
+- Auto-tracking snaps back to newest content seamlessly
+
+### Submit input (new message)
+- `submit_input` calls `follow_chat_top()` → resets to 0 and un-pauses
+- Fresh turn starts at the top, right below input
+
+## Key Bindings
+
+| Key | Action |
+|---|---|
+| `Ctrl+K` / `Ctrl+J` | Scroll up / down by line (up = older, down = newer) |
+| `Alt+U` / `Alt+D` | Scroll up / down by page |
+| `g` / `Shift+G` | Jump to top of history (0) / bottom (max) |
+| `[` / `]` | Jump to previous / next user prompt |
+| `Ctrl+G` | Toggle scroll bookmark (stash/restore position) |
+| `Alt+S` | Toggle typing scroll lock (stay put while typing) |
+
+## Indicators
+
+- No indicator when at newest (auto-scroll active at 0)
+- `↑N` — N newer lines above viewport (user scrolled away from newest)
+- `↓N` — N older lines below viewport (user hasn't reached oldest content)
+- Native scrollbar (optionally rendered in the right margin)
+
+## Implementation
+
+- `scroll_up(amount)` — if auto-following: `offset = amount.min(max)`; if paused: `offset += amount`
+- `scroll_down(amount)` — `offset -= amount`; if `offset == 0`, resume auto-follow
+- `follow_chat_top()` — `scroll_offset = 0`, `auto_scroll_paused = false`
+- Render path: `scroll_offset` used directly (no inversion to `max_scroll`)
+- `ui_viewport.rs`, `ui_file_diff.rs`, `handterm_native_scroll.rs` all use direct scroll_offset
+- `submit_input` always resets to 0
+
+## Verification
+
+1. Start a conversation → input at top, new output streams in right below ✅
+2. Scroll down (Ctrl+J) → moves toward older content ✅
+3. Scroll up (Ctrl+K) → moves toward newer content, resumes at 0 ✅
+4. Send a new message → snaps back to top for fresh output ✅
+5. Indicators show current position (`↑N`, `↓N`) ✅

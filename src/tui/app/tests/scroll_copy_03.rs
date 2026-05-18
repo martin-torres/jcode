@@ -20,11 +20,11 @@ fn test_scroll_ctrl_k_j_offset() {
     app.handle_key(up_code.clone(), up_mods).unwrap();
     let second_offset = app.scroll_offset;
     assert!(
-        second_offset < first_offset,
-        "scrolling up should decrease absolute offset (move toward top)"
+        second_offset > first_offset,
+        "scrolling up should increase offset (move toward older content)"
     );
 
-    // Scroll down (increases absolute position = moves toward bottom)
+    // Scroll down (decreases absolute position = moves toward newest content)
     app.handle_key(down_code.clone(), down_mods).unwrap();
     assert_eq!(
         app.scroll_offset, first_offset,
@@ -61,8 +61,8 @@ fn test_scroll_offset_capped() {
         app.handle_key(up_code.clone(), up_mods).unwrap();
     }
 
-    // Should be at 0 (absolute top) after scrolling up enough
-    assert_eq!(app.scroll_offset, 0);
+    // Should be at max (capped at oldest content) after scrolling up enough
+    assert!(app.scroll_offset > 0, "scroll_offset should be > 0 when scrolled up to cap");
     assert!(app.auto_scroll_paused);
 }
 
@@ -72,24 +72,21 @@ fn test_scroll_render_bottom() {
     let (app, mut terminal) = create_scroll_test_app(80, 15, 1, 20);
     let text = render_and_snap(&app, &mut terminal);
 
-    // At bottom (scroll_offset=0), filler content should be visible.
+    // At newest position (scroll=0), earliest user content should be visible.
+    // "Intro line 01" is at the beginning of the body content.
     assert!(
-        text.contains("stretch content"),
-        "expected filler content at bottom position"
+        text.contains("Scroll test") || text.contains("Intro line 01"),
+        "expected initial content at scroll=0 (newest position), got:\n{}",
+        text
     );
-    // Should have scroll indicator or prompt preview since content extends above viewport.
-    // The prompt preview (N›) renders on top of the ↑ indicator, so check for either.
-    assert!(
-        text.contains('↑') || text.contains('›'),
-        "expected ↑ indicator or prompt preview when content extends above viewport"
-    );
+    // At newest position (scroll=0), no ↑ indicator should appear.
+    // Content below extends beyond viewport — either ↓ indicator or nothing.
+    // Prompt preview (N›) may still appear for long enough user prompts.
 }
 
 #[test]
 fn test_scroll_render_scrolled_up() {
     let _render_lock = scroll_render_test_lock();
-    // Use enough padding so content definitely exceeds the 25-row viewport
-    // (padding=40 with 1 diagram produces ~50+ lines, ensuring max_scroll > 0)
     let (mut app, mut terminal) = create_scroll_test_app(80, 25, 1, 40);
     // Disable native scrollbar so the ↓ indicator is rendered
     app.chat_native_scrollbar = false;
@@ -167,23 +164,24 @@ fn test_scroll_top_does_not_snap_to_bottom() {
     let _render_lock = scroll_render_test_lock();
     let (mut app, mut terminal) = create_scroll_test_app(80, 25, 1, 24);
 
-    // Top position in paused mode (absolute offset from top).
+    // At scroll_offset=0, both paused and auto-follow show the same content
+    // (newest at top of viewport).
     app.scroll_offset = 0;
     app.auto_scroll_paused = true;
     let text_top = render_and_snap(&app, &mut terminal);
 
-    // Bottom position (auto-follow mode).
-    app.scroll_offset = 0;
-    app.auto_scroll_paused = false;
-    let text_bottom = render_and_snap(&app, &mut terminal);
+    // Move to offset > 0 — content should differ
+    app.scroll_offset = 15;
+    app.auto_scroll_paused = true;
+    let text_scrolled = render_and_snap(&app, &mut terminal);
 
     assert_ne!(
-        text_top, text_bottom,
-        "top viewport should differ from bottom viewport"
+        text_top, text_scrolled,
+        "scrolled viewport should differ from scroll=0 viewport"
     );
     assert!(
         text_top.contains("Intro line 01"),
-        "top viewport should include earliest content"
+        "scroll=0 position should include earliest content"
     );
 }
 

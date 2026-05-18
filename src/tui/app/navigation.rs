@@ -1057,14 +1057,8 @@ impl App {
         } else {
             self.scroll_max_estimate()
         };
-        if !self.auto_scroll_paused {
-            // Auto-scroll is active (at scroll_offset=0, showing newest at top).
-            // Scrolling up reveals older content (higher line indices).
-            self.scroll_offset = amount.min(max);
-        } else {
-            // Already paused: move further toward older content.
-            self.scroll_offset = (self.scroll_offset + amount).min(max);
-        }
+        // Increase offset = move toward older content (higher line index)
+        self.scroll_offset = (self.scroll_offset + amount).min(max);
         self.auto_scroll_paused = true;
         self.maybe_queue_compacted_history_load();
     }
@@ -1073,8 +1067,7 @@ impl App {
         if self.auto_scroll_paused {
             return;
         }
-        // In the top-down layout, scroll_offset is already distance from top (0 = newest).
-        // No coordinate transformation needed — just pause in place.
+        // Just mark paused — scroll_offset is already absolute
         self.auto_scroll_paused = true;
     }
 
@@ -1082,16 +1075,10 @@ impl App {
         if !self.auto_scroll_paused {
             return;
         }
-        let max_scroll = super::super::ui::last_max_scroll();
-        let _max = if max_scroll > 0 {
-            max_scroll
-        } else {
-            self.scroll_max_estimate()
-        };
-        // Scroll down toward newer content (lower line indices, toward 0).
+        // Decrease offset = move toward newer content (lower line index)
         self.scroll_offset = self.scroll_offset.saturating_sub(amount);
         if self.scroll_offset == 0 {
-            self.follow_chat_top(); // Resume auto-scroll at newest content
+            self.follow_chat_top();
         }
     }
 

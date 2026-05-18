@@ -2,17 +2,14 @@
   "version": "0.8.8",
   "integration_state_schema": 1,
   "installed_integrations": [
-    "generic"
+    "opencode"
   ],
   "integration_settings": {
-    "generic": {
+    "opencode": {
       "script": "sh",
-      "parsed_options": {
-        "commands_dir": ".hermes/cmds"
-      },
       "invoke_separator": "."
     }
   },
-  "integration": "generic",
-  "default_integration": "generic"
+  "integration": "opencode",
+  "default_integration": "opencode"
 }

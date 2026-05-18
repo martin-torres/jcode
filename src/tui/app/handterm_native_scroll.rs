@@ -122,7 +122,7 @@ impl App {
                 let position = if self.auto_scroll_paused {
                     self.scroll_offset.min(max_scroll)
                 } else {
-                    max_scroll
+                    0
                 };
                 panes.push(PaneState {
                     kind: PaneKind::Chat,

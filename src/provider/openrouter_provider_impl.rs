@@ -884,13 +884,15 @@ impl Provider for OpenRouterProvider {
             return Ok(());
         }
 
-        let _ = self.fetch_models().await?;
+        // Always fetch fresh from API during prefetch (including on new sessions)
+        // rather than relying on disk cache which could be hours stale.
+        let _ = self.refresh_models().await?;
         if self.supports_provider_features {
             // Also prefetch endpoints for the current model so preferred_provider() works immediately.
             let model = self.model();
-            if load_endpoints_disk_cache(&model).is_none() {
-                let _ = self.fetch_endpoints(&model).await;
-            }
+            // Always refresh endpoints during prefetch too, since the model catalog
+            // was just refreshed and we want up-to-date provider routing data.
+            let _ = self.fetch_endpoints(&model).await;
         }
         Ok(())
     }
