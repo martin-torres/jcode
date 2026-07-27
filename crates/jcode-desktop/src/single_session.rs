@@ -123,6 +123,10 @@ pub(crate) struct SingleSessionApp {
     welcome_timeline: bool,
     welcome_hero_phrase_index: usize,
     text_scale: f32,
+    /// When true, the input box (composer) appears at the top of the window
+    /// and the conversation transcript flows downward beneath it (natural
+    /// top-to-bottom reading order). Default is false (composer at bottom).
+    pub(crate) input_top: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -664,7 +668,12 @@ impl SingleSessionApp {
             welcome_timeline,
             welcome_hero_phrase_index,
             text_scale: 1.0,
+            input_top: false,
         }
+    }
+
+    pub(crate) fn set_input_top(&mut self, input_top: bool) {
+        self.input_top = input_top;
     }
 
     pub(crate) fn replace_session(&mut self, session: Option<workspace::SessionCard>) {

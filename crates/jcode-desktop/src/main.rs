@@ -76,6 +76,10 @@ const PANEL_BODY_LINE_GAP: f32 = 8.0;
 const SINGLE_SESSION_DRAFT_TOP_OFFSET: f32 = 158.0;
 const SINGLE_SESSION_STATUS_GAP: f32 = 30.0;
 const SINGLE_SESSION_CARET_WIDTH: f32 = 2.0;
+
+// Input-top layout constants (used when input_box_top = true)
+const INPUT_TOP_DRAFT_HEIGHT: f32 = 60.0;
+const INPUT_TOP_DRAFT_BOTTOM_GAP: f32 = 12.0;
 const SINGLE_SESSION_CARET_COLOR: [f32; 4] = [0.130, 0.150, 0.190, 0.92];
 const SESSION_SPAWN_REFRESH_DELAY: Duration = Duration::from_millis(350);
 const BACKGROUND_POLL_INTERVAL: Duration = Duration::from_millis(33);
