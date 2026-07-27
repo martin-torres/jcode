@@ -60,7 +60,9 @@ The main content area. Contains sections in this order (top to bottom):
 1. **Streaming Section** — Live LLM text as it generates
 2. **BatchProgress** — Tool execution status bars
 3. **Body Section** — All committed messages (user prompts, assistant replies, tool results)
-4. **Header** — Session info (model, provider, context usage)
+
+### Fixed Header (between Queued Prompts and Input)
+Session info line (model, provider, context usage) rendered as a fixed `Paragraph` outside the scrollable viewport. Not part of `PreparedChatFrame`. Does not scroll.
 
 ### chunks[7] — Donut (conditional, bottom)
 ASCII art spinner shown when idle.
