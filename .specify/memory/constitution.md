@@ -145,7 +145,7 @@ The input box moves to the TOP of the screen. Messages flow downward from the in
 The message rendering functions (how individual messages are drawn, how streaming text fills, how batch progress is displayed) remain unchanged. Only the **constraint order** in the `Layout` definition and the **section assembly order** in `prepare_messages_inner` change. The rendering primitives themselves do not need new logic.
 
 ### III. Scroll Semantics Must Be Intuitive
-After inversion, `scroll = 0` shows the newest content (just below the input). `scroll = max_scroll` shows the oldest content. Scrolling UP must reveal chronologically OLDER content (content further from the input). If the existing `scroll_up`/`scroll_down` functions move in the wrong direction for this, their direction semantics must be inverted — not just the anchor point.
+After inversion, `scroll = 0` shows the newest content (just below the input). `scroll = max_scroll` shows the oldest content. Scrolling UP reveals chronologically NEWER content (content closer to the input). Scrolling DOWN reveals chronologically OLDER content. If the existing `scroll_up`/`scroll_down` functions move in the wrong direction for this, their direction semantics must be inverted — not just the anchor point.
 
 ### IV. Auto-Scroll Anchors at Top (scroll = 0)
 Auto-follow targets `scroll = 0` instead of `scroll = max_scroll`. When the user manually scrolls away from `scroll = 0`, auto-scroll pauses. When they scroll back to `scroll = 0`, it resumes. No changes to the pause/resume mechanism itself — only the anchor value.

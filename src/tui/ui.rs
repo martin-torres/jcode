@@ -1849,13 +1849,21 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
     let show_donut = super::idle_donut_active(app);
     let donut_height: u16 = if show_donut { 14 } else { 0 };
     let notification_height: u16 = if app.has_notification() { 1 } else { 0 };
+    let header_lines = {
+        let mut h = header::build_persistent_header(app, wide_prepare_width);
+        h.extend(header::build_header_lines(app, wide_prepare_width));
+        h
+    };
+    let header_height: u16 = header_lines.len().max(1) as u16;
+
     let fixed_height = 1
         + queued_height
+        + header_height
         + notification_height
         + inline_block_height
         + inline_ui_gap_height
         + input_height
-        + donut_height; // status + queued + notification + inline UI + gap + input + donut
+        + donut_height; // status + queued + header + notification + inline UI + gap + input + donut
     let available_height = chat_area.height;
 
     let initial_content_height = prepared_wide.total_wrapped_lines().max(1) as u16;
@@ -1899,16 +1907,17 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
     // Use packed layout when content fits, scrolling layout otherwise
     let use_packed = content_height + fixed_height <= available_height;
 
-    // Layout: messages (includes header), queued, status, notification, inline UI, gap, input, donut
+    // Layout: queued, header, input, status, notification, inline UI, gap, messages, donut
     // All vertical chunks are within the chat_area (left column).
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(if use_packed {
             vec![
-                Constraint::Length(input_height),          // Input (now at top)
+                Constraint::Length(queued_height),         // Queued messages (top)
+                Constraint::Length(header_height),         // Header (session info)
+                Constraint::Length(input_height),          // Input area
                 Constraint::Length(1),                     // Status line
                 Constraint::Length(notification_height),   // Notification line
-                Constraint::Length(queued_height),         // Queued messages
                 Constraint::Length(inline_block_height),   // Inline UI
                 Constraint::Length(inline_ui_gap_height),  // Inline UI/input spacing
                 Constraint::Length(content_height.max(1)), // Messages (exact height)
@@ -1916,10 +1925,11 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
             ]
         } else {
             vec![
-                Constraint::Length(input_height),         // Input (now at top)
-                Constraint::Length(1),                    // Status line
+                Constraint::Length(queued_height),         // Queued messages (top)
+                Constraint::Length(header_height),         // Header (session info)
+                Constraint::Length(input_height),          // Input area
+                Constraint::Length(1),                     // Status line
                 Constraint::Length(notification_height),  // Notification line
-                Constraint::Length(queued_height),        // Queued messages
                 Constraint::Length(inline_block_height),  // Inline UI
                 Constraint::Length(inline_ui_gap_height), // Inline UI/input spacing
                 Constraint::Min(3),                       // Messages (scrollable)
@@ -1932,12 +1942,12 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
     if let Some(ref mut capture) = debug_capture {
         capture.layout.use_packed = use_packed;
         capture.layout.estimated_content_height = content_height as usize;
-        capture.layout.messages_area = Some(chunks[6].into());
+        capture.layout.messages_area = Some(chunks[7].into());
         if queued_height > 0 {
-            capture.layout.queued_area = Some(chunks[3].into());
+            capture.layout.queued_area = Some(chunks[0].into());
         }
-        capture.layout.status_area = Some(chunks[1].into());
-        capture.layout.input_area = Some(chunks[0].into());
+        capture.layout.status_area = Some(chunks[3].into());
+        capture.layout.input_area = Some(chunks[2].into());
         capture.layout.input_lines_raw = app.input().lines().count().max(1);
         capture.layout.input_lines_wrapped = base_input_height as usize;
 
@@ -1995,8 +2005,8 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
     }
     let draw_start = Instant::now();
 
-    // Messages area is chunks[6] within the chat column (now below input/status/queued).
-    let messages_area = chunks[6];
+    // Messages area is chunks[7] within the chat column.
+    let messages_area = chunks[7];
     note_chat_layout(ChatLayoutMetrics {
         chat_area,
         messages_area,
@@ -2013,7 +2023,7 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
         capture.layout.messages_area = Some(messages_area.into());
         capture.layout.diagram_area = diagram_area.map(|r| r.into());
     }
-    record_layout_snapshot(messages_area, diagram_area, diff_pane_area, Some(chunks[0]));
+    record_layout_snapshot(messages_area, diagram_area, diff_pane_area, Some(chunks[2]));
 
     let margins = draw_messages(
         frame,
@@ -2097,37 +2107,45 @@ fn draw_inner(frame: &mut Frame, app: &dyn TuiState) {
             centered: margins.centered,
         });
     }
+    // Render fixed header between queued prompts and input
+    {
+        let header_area = chunks[1];
+        let header_para = Paragraph::new(header_lines.clone())
+            .alignment(Alignment::Center);
+        frame.render_widget(header_para, header_area);
+    }
+
     if queued_height > 0 {
         if let Some(ref mut capture) = debug_capture {
             capture.render_order.push("draw_queued".to_string());
         }
-        input_ui::draw_queued(frame, app, chunks[3], user_count + 1);
+        input_ui::draw_queued(frame, app, chunks[0], user_count + 1);
     }
     if let Some(ref mut capture) = debug_capture {
         capture.render_order.push("draw_status".to_string());
     }
-    input_ui::draw_status(frame, app, chunks[1], pending_count);
+    input_ui::draw_status(frame, app, chunks[3], pending_count);
     if notification_height > 0 {
-        input_ui::draw_notification(frame, app, chunks[2]);
+        input_ui::draw_notification(frame, app, chunks[4]);
     }
     if let Some(ref mut capture) = debug_capture {
         capture.render_order.push("draw_input".to_string());
     }
     // Draw inline UI if active
     if inline_block_height > 0 {
-        draw_inline_ui(frame, app, chunks[4]);
+        draw_inline_ui(frame, app, chunks[5]);
     }
 
     input_ui::draw_input(
         frame,
         app,
-        chunks[0],
+        chunks[2],
         user_count + pending_count + 1,
         &mut debug_capture,
     );
 
     if donut_height > 0 {
-        animations::draw_idle_animation(frame, app, chunks[7]);
+        animations::draw_idle_animation(frame, app, chunks[8]);
     }
 
     // Draw info widget overlays (skip during idle animation - they look out of place)

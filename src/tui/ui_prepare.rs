@@ -341,9 +341,8 @@ pub(super) fn prepare_messages(
 }
 
 fn prepare_messages_inner(app: &dyn TuiState, width: u16, height: u16) -> PreparedChatFrame {
-    let mut all_header_lines = header::build_persistent_header(app, width);
-    all_header_lines.extend(header::build_header_lines(app, width));
-    let header_prepared = Arc::new(wrap_lines(all_header_lines, &[], &[], &[], width));
+    // Header is now rendered as a fixed element outside the viewport (between queued prompts and input).
+    // It is NOT part of the scrollable viewport sections.
 
     let body_prepared = prepare_body_cached(app, width);
     let has_batch_progress = active_batch_progress(app).is_some();
@@ -379,7 +378,9 @@ fn prepare_messages_inner(app: &dyn TuiState, width: u16, height: u16) -> Prepar
         } else {
             ratatui::layout::Alignment::Left
         };
-        let mut wrapped_lines = header_prepared.wrapped_lines.clone();
+        // Header is now rendered separately outside the viewport.
+        // Empty state shows only suggestion prompts.
+        let mut wrapped_lines: Vec<Line<'static>> = Vec::new();
 
         if !suggestions.is_empty() {
             wrapped_lines.push(Line::from(""));
@@ -459,7 +460,6 @@ fn prepare_messages_inner(app: &dyn TuiState, width: u16, height: u16) -> Prepar
         (PreparedSectionKind::Streaming, streaming_prepared),
         (PreparedSectionKind::BatchProgress, batch_progress_prepared),
         (PreparedSectionKind::Body, body_prepared),
-        (PreparedSectionKind::Header, header_prepared),
     ])
 }
 
