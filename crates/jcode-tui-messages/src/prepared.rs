@@ -67,7 +67,6 @@ pub struct PreparedSection {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PreparedSectionKind {
     Body,
-    Header,
     BatchProgress,
     Streaming,
 }
